@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Download Amitosh Antivirus for free real-time protection on Windows, macOS, Linux, and Android. Built on ClamAV with no cost setup.">
+    <meta name="keywords" content="free antivirus, real-time protection, ClamAV, Google Sites, malware protection, Amitosh Tools">
+    <meta name="author" content="Amitosh Tools">
+    <meta name="robots" content="index, follow">
+    <title>Amitosh Antivirus - Free Real-Time Protection</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+            text-align: center;
+            line-height: 1.6;
+        }
+        .container {
+            background-color: #fff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #2c3e50;
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        h2, h3, h4 {
+            color: #34495e;
+            margin-top: 20px;
+        }
+        p {
+            font-size: 16px;
+        }
+        ul, ol {
+            text-align: left;
+            margin: 15px 0;
+            padding-left: 20px;
+        }
+        li {
+            margin: 5px 0;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 5px;
+            color: white;
+            font-size: 16px;
+            text-decoration: none;
+            transition: transform 0.2s, opacity 0.2s;
+            cursor: pointer;
+            background-color: #4CAF50;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+            opacity: 0.9;
+        }
+        .code-block {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: left;
+            font-family: Consolas, monospace;
+            font-size: 14px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+        footer {
+            margin-top: 20px;
+            font-size: 12px;
+            color: #777;
+        }
+        footer a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            .btn {
+                width: 100%;
+                margin: 10px 0;
+            }
+            .code-block {
+                font-size: 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Welcome to Amitosh Tools</h1>
+        <h2>Protect Your Computer with Amitosh Antivirus</h2>
+        <p>Amitosh Antivirus is a completely free, real-time antivirus tool designed to protect your computer from viruses and malware. Built on the open-source ClamAV engine, it offers cross-platform compatibility for Windows, macOS, Linux, and Android (via Termux). No costs, no subscriptions—just pure protection.</p>
+        <p>Download the free version now and start protecting your device:</p>
+        <a href="https://github.com/amitosh-tools/amitosh-antivirus/releases/latest/download/amitosh_antivirus.zip" target="_blank" class="btn" id="downloadLink">
+            Download Free Version
+        </a>
+
+        <h3>Features</h3>
+        <ul>
+            <li>Real-time file monitoring (PC only)</li>
+            <li>Cross-platform support (Windows, macOS, Linux, Android via Termux)</li>
+            <li>Weekly virus definition updates</li>
+            <li>Quarantine management with logging</li>
+            <li>Basic heuristic detection</li>
+            <li>Desktop notifications</li>
+            <li>Self-protection mechanism</li>
+        </ul>
+
+        <h3>How to Use</h3>
+        <ol>
+            <li>Download the zip file using the button above.</li>
+            <li>Unzip and follow the <code>README.md</code> instructions.</li>
+            <li>Install ClamAV and Python dependencies (free, see below).</li>
+            <li>Configure <code>config.ini</code> for directories to monitor.</li>
+            <li>Run <code>amitosh_antivirus.py</code> to start protection.</li>
+        </ol>
+
+        <h3>Downloadable Package Contents</h3>
+        <p>The zip file includes all free tools you need. Below are the contents:</p>
+
+        <h4>amitosh_antivirus.py</h4>
+        <div class="code-block">
+import pyclamd
+import os
+import time
+import schedule
+import subprocess
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
+import configparser
+from plyer import notification
+from threading import Thread
+import psutil
+from colorama import init, Fore
+
+init()  # Initialize colorama for colored output
+
+class AntivirusHandler(FileSystemEventHandler):
+    def __init__(self, cd, quarantine_dir):
+        self.cd = cd
+        self.quarantine_dir = quarantine_dir
+
+    def on_modified(self, event):
+        if not event.is_directory:
+            Thread(target=self.scan_file, args=(event.src_path,)).start()
+
+    def on_created(self, event):
+        if not event.is_directory:
+            Thread(target=self.scan_file, args=(event.src_path,)).start()
+
+    def scan_file(self, file_path):
+        try:
+            # Basic heuristic: Flag large .exe files
+            if file_path.endswith('.exe') and os.path.getsize(file_path) > 10 * 1024 * 1024:
+                print(Fore.YELLOW + f"Warning: Large .exe detected: {file_path}" + Fore.RESET)
+                self.quarantine_file(file_path, "Suspicious size")
+                return
+
+            scan_result = self.cd.scan_file(file_path)
+            is_threat = scan_result and scan_result[file_path][0] != 'OK'
+            threat_name = scan_result[file_path][1] if is_threat else "Clean"
+
+            if is_threat:
+                print(Fore.RED + f"Threat detected in {file_path}: {threat_name}" + Fore.RESET)
+                notification.notify(
+                    title="Amitosh Antivirus Alert",
+                    message=f"Threat detected: {os.path.basename(file_path)}",
+                    timeout=10
+                )
+                self.quarantine_file(file_path, threat_name)
+            else:
+                print(Fore.GREEN + f"Clean: {file_path}" + Fore.RESET)
+        except Exception as e:
+            print(f"Error scanning {file_path}: {e}")
+
+    def quarantine_file(self, file_path, reason="Threat"):
+        try:
+            if not os.path.exists(self.quarantine_dir):
+                os.makedirs(self.quarantine_dir)
+            quarantine_path = os.path.join(self.quarantine_dir, f"{time.time()}_{os.path.basename(file_path)}")
+            os.rename(file_path, quarantine_path)
+            with open(os.path.join(self.quarantine_dir, 'log.txt'), 'a') as log:
+                log.write(f"{time.ctime()}: {file_path} -> {quarantine_path} ({reason})\n")
+            print(f"Quarantined: {quarantine_path}")
+        except Exception as e:
+            print(f"Error quarantining: {e}")
+
+def update_virus_definitions():
+    try:
+        subprocess.run(['freshclam'], check=True)
+        print(Fore.GREEN + "Virus definitions updated." + Fore.RESET)
+    except subprocess.CalledProcessError as e:
+        print(Fore.RED + f"Update failed: {e}" + Fore.RESET)
+
+def protect_self():
+    pid = os.getpid()
+    while True:
+        if not any(p.pid == pid for p in psutil.process_iter()):
+            os.system(f"python {__file__} &")
+            break
+        time.sleep(10)
+
+def check_updates():
+    try:
+        import requests
+        response = requests.get('https://api.github.com/repos/amitosh-tools/amitosh-antivirus/releases/latest')
+        latest_version = response.json()['tag_name']
+        if latest_version > 'v1.0':  # Update this with your current version
+            print(Fore.YELLOW + f"New version {latest_version} available! Download from GitHub." + Fore.RESET)
+    except Exception:
+        print("Update check failed.")
+
+def main():
+    config = configparser.ConfigParser()
+    config_file = 'config.ini'
+    if not os.path.exists(config_file):
+        config['main'] = {
+            'monitored_dirs': os.path.expanduser('~/Downloads'),
+            'quarantine_dir': os.path.expanduser('~/AmitoshQuarantine')
+        }
+        with open(config_file, 'w') as configfile:
+            config.write(configfile)
+    config.read(config_file)
+    monitored_dirs = config.get('main', 'monitored_dirs').split(',')
+    quarantine_dir = config.get('main', 'quarantine_dir')
+
+    try:
+        cd = pyclamd.ClamdUnixSocket() if os.name != 'nt' else pyclamd.ClamdNetworkSocket()
+        cd.ping()
+    except pyclamd.ConnectionError:
+        print(Fore.RED + "Error: ClamAV daemon not running. Install and start ClamAV." + Fore.RESET)
+        return
+
+    event_handler = AntivirusHandler(cd, quarantine_dir)
+    observer = Observer()
+    for directory in monitored_dirs:
+        if os.path.isdir(directory):
+            observer.schedule(event_handler, directory, recursive=True)
+            print(f"Monitoring: {directory}")
+    observer.start()
+
+    schedule.every(7).days.do(update_virus_definitions)
+    Thread(target=protect_self, daemon=True).start()
+
+    try:
+        print(Fore.CYAN + "Amitosh Antivirus running. Press Ctrl+C to stop." + Fore.RESET)
+        check_updates()
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
+    except KeyboardInterrupt:
+        observer.stop()
+        print("Stopped.")
+    observer.join()
+
+if __name__ == "__main__":
+    main()
+        </div>
+
+        <h4>config.ini</h4>
+        <div class="code-block">
+[main]
+monitored_dirs = ~/Downloads, ~/Documents
+quarantine_dir = ~/AmitoshQuarantine
+        </div>
+
+        <h4>README.md</h4>
+        <div class="code-block">
+# Amitosh Antivirus
+
+A completely free, real-time antivirus tool built on ClamAV.
+
+## Installation
+
+1. **Prerequisites**:
+   - Install Python 3: [python.org](https://www.python.org/downloads/)
+   - Install ClamAV:
+     - Windows: [clamav.net/downloads](https://www.clamav.net/downloads)
+     - macOS: `brew install clamav` (via Homebrew)
+     - Linux: `sudo apt-get install clamav clamav-daemon`
+     - Android: Install Termux, then `pkg install clamav python`
+   - Start ClamAV daemon: `sudo systemctl start clamav-daemon` (Linux) or OS-specific.
+
+2. **Install Python Dependencies**:
+   ```bash
+   pip install -r requirements.txt
